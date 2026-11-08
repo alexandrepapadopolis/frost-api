@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16
+    container_name: frost-db
+    environment:
+      POSTGRES_DB: frost
+      POSTGRES_USER: frost
+      POSTGRES_PASSWORD: frost
+    ports:
+      - "5432:5432"
+    volumes:
+      - frost_pgdata:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frost -d frost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    container_name: frost-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://frost:frost@db:5432/frost
+      API_KEY_HEADER: X-API-Key
+      INITIAL_API_KEY: FROST-ESP32-CHAVE-001
+      INITIAL_DEVICE_IDENTIFIER: SPLIT-001
+      INITIAL_DEVICE_DESCRIPTION: Ar condicionado principal
+      INITIAL_DEVICE_LOCATION: Sala
+      INITIAL_DEVICE_MANUFACTURER: DAIKIN
+      INITIAL_DEVICE_MODEL: FTKP12S5VL
+    ports:
+      - "8000:8000"
+
+volumes:
+  frost_pgdata:
